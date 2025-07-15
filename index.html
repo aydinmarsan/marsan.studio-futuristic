@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pip-Boy Not Defteri</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pipboy.css">
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="pipboy-app">
+    <aside class="sidebar">
+      <div class="sidebar-header">VAULT NOTEPAD</div>
+      <nav class="sidebar-menu">
+        <button class="menu-btn active" data-section="notes">📓 Tüm Notlar</button>
+        <button class="menu-btn" data-section="logs">📁 Linkler</button>
+        <button class="menu-btn" data-section="tags">🔖 Etiketler</button>
+        <button class="menu-btn" data-section="settings">⚙️ Sistem Ayarları</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <header class="section-header">
+        <h1>VAULT NOTEPAD - ENTRY LOG 0001</h1>
+      </header>
+      <section class="section active" id="notes-section">
+        <div class="section-header">
+          <h2 class="note-title">📓 Notlar</h2>
+          <div style="display:flex; gap:1rem; align-items:center;">
+            <div style="display:flex; align-items:center; background:rgba(16,24,10,0.8); border:2px solid #3bff6a; border-radius:8px; box-shadow:0 0 8px #3bff6a inset; padding:2px 8px;">
+              <span style="color:#3bff6a; font-size:1.2em; margin-right:4px;">🔍</span>
+              <input id="searchInput" type="search" class="note-input" style="width:140px; background:transparent; border:none; box-shadow:none; outline:none;" placeholder="Ara..." />
+            </div>
+            <button id="toggleCrtBtn" class="menu-btn" style="padding:0.3rem 1rem; font-size:1rem;">CRT Efekti</button>
+          </div>
+        </div>
+        <input type="text" id="noteTitle" class="note-input" placeholder="Başlık yazın..." maxlength="60" />
+        <textarea id="noteContent" class="note-textarea" placeholder="Notunuzu buraya yazın..." rows="5"></textarea>
+        <input type="text" id="noteTags" class="note-input" placeholder="Etiketler (virgülle ayırın)" maxlength="60" />
+        <div class="editor-actions">
+          <button id="saveNoteBtn" class="save-note-btn">Kaydet</button>
+          <button id="clearNoteBtn" class="cancel-note-btn">Temizle</button>
+        </div>
+        <div class="notes-list" id="notesList"></div>
+        <footer class="footer">
+          OLUŞTURULDU: <span id="createdAt">-</span> | SON GÜNCELLEME: <span id="updatedAt">-</span>
+        </footer>
+      </section>
+      <section class="section" id="logs-section">
+        <h2 class="note-title">🔗 Linkler</h2>
+        <div style="background:rgba(16,24,10,0.85); border:2px solid #3bff6a; border-radius:12px; box-shadow:0 0 12px #3bff6a inset; padding:1.2rem 1rem 1rem 1rem; margin-bottom:2rem; max-width:480px;">
+          <div style="display:flex; align-items:center; gap:0.7rem; margin-bottom:0.7rem;">
+            <span style="color:#3bff6a; font-size:1.3em;">➕</span>
+            <input type="text" id="linkName" class="note-input" style="flex:1;" placeholder="Başlık (örn: Kişisel Site)" maxlength="60" />
+          </div>
+          <div style="display:flex; align-items:center; gap:0.7rem; margin-bottom:0.7rem;">
+            <span style="color:#3bff6a; font-size:1.2em;">🔗</span>
+            <input type="url" id="linkUrl" class="note-input" style="flex:1;" placeholder="URL (örn: https://site.com)" maxlength="200" />
+          </div>
+          <div style="display:flex; align-items:center; gap:0.7rem; margin-bottom:0.7rem;">
+            <span style="color:#3bff6a; font-size:1.1em;">🏷️</span>
+            <input type="text" id="linkCategory" class="note-input" style="flex:1;" placeholder="Kategori (örn: Sosyal)" maxlength="30" />
+          </div>
+          <div class="editor-actions" style="justify-content:flex-end;">
+            <button id="saveLinkBtn" class="save-note-btn">Kaydet</button>
+            <button id="clearLinkBtn" class="cancel-note-btn">Temizle</button>
+          </div>
+        </div>
+        <div class="links-categories" id="linksList"></div>
+      </section>
+      <section class="section" id="tags-section">
+        <h2 class="note-title">Etiketler</h2>
+        <div class="note-content">Burada not etiketleri yönetilecek.</div>
+      </section>
+      <section class="section" id="settings-section">
+        <h2 class="note-title">Sistem Ayarları</h2>
+        <div class="note-content">Burada sistem ayarları yapılacak.</div>
+      </section>
+    </main>
+  </div>
+  <script>
+    // Sekme geçişi için temel JS
+    const menuBtns = document.querySelectorAll('.menu-btn');
+    const sections = document.querySelectorAll('.section');
+    menuBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        menuBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        sections.forEach(sec => sec.classList.remove('active'));
+        document.getElementById(btn.dataset.section + '-section').classList.add('active');
+      });
+    });
+
+    // Not paneli işlevselliği ve gelişmiş özellikler
+    const saveNoteBtn = document.getElementById('saveNoteBtn');
+    const clearNoteBtn = document.getElementById('clearNoteBtn');
+    const noteTitle = document.getElementById('noteTitle');
+    const noteContent = document.getElementById('noteContent');
+    const noteTags = document.getElementById('noteTags');
+    const notesList = document.getElementById('notesList');
+    const createdAt = document.getElementById('createdAt');
+    const updatedAt = document.getElementById('updatedAt');
+    const searchInput = document.getElementById('searchInput');
+    const toggleCrtBtn = document.getElementById('toggleCrtBtn');
+    const crtOverlay = document.querySelector('.crt-overlay');
+    let notes = JSON.parse(localStorage.getItem('vaultNotes') || '[]');
+    let editingIndex = null;
+    let crtOn = true;
+    function formatDate(dt) {
+      const d = new Date(dt);
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
+    function renderNotes() {
+      notesList.innerHTML = '';
+      let filtered = notes;
+      const q = searchInput.value.trim().toLowerCase();
+      if (q) {
+        filtered = notes.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q) || (n.tags||'').toLowerCase().includes(q));
+      }
+      filtered.forEach((note, idx) => {
+        const div = document.createElement('div');
+        div.className = 'note-item';
+        div.innerHTML = `
+          <div class='note-content'>
+            <span style='font-size:1.2em;'>${note.favorite ? '★' : '☆'}</span>
+            <strong>${note.title || '(Başlıksız)'}</strong>
+            <span style='float:right;font-size:0.9em;'>${(note.tags||'').split(',').filter(Boolean).map(t=>`<span style='border:1px solid #3bff6a; border-radius:6px; padding:0 4px; margin-left:4px;'>#${t.trim()}</span>`).join('')}</span>
+            <br>${note.content.replace(/\n/g, '<br>')}
+          </div>
+          <div class='note-actions'>
+            <button data-fav='${idx}'>${note.favorite ? 'Favoriden Çıkar' : 'Favori Yap'}</button>
+            <button data-copy='${idx}'>Kopyala</button>
+            <button data-edit='${idx}'>Düzenle</button>
+            <button data-delete='${idx}'>Sil</button>
+          </div>
+          <div style='font-size:0.85em;opacity:0.7;margin-top:2px;'>${formatDate(note.created)} | ${formatDate(note.updated)}</div>
+        `;
+        notesList.appendChild(div);
+      });
+      if (filtered.length > 0) {
+        createdAt.textContent = formatDate(filtered[0].created);
+        updatedAt.textContent = formatDate(filtered[0].updated);
+      } else {
+        createdAt.textContent = '-';
+        updatedAt.textContent = '-';
+      }
+    }
+    function clearInputs() {
+      noteTitle.value = '';
+      noteContent.value = '';
+      noteTags.value = '';
+      editingIndex = null;
+    }
+    saveNoteBtn.onclick = function() {
+      const title = noteTitle.value.trim();
+      const content = noteContent.value.trim();
+      const tags = noteTags.value.trim();
+      if (!title && !content) return;
+      const timestamp = new Date().toISOString();
+      if (editingIndex !== null) {
+        notes[editingIndex] = { ...notes[editingIndex], title, content, tags, updated: timestamp };
+      } else {
+        notes.unshift({ title, content, tags, created: timestamp, updated: timestamp, favorite: false });
+      }
+      localStorage.setItem('vaultNotes', JSON.stringify(notes));
+      clearInputs();
+      renderNotes();
+    };
+    clearNoteBtn.onclick = function() {
+      clearInputs();
+    };
+    notesList.onclick = function(e) {
+      if (e.target.dataset.edit !== undefined) {
+        editingIndex = +e.target.dataset.edit;
+        noteTitle.value = notes[editingIndex].title;
+        noteContent.value = notes[editingIndex].content;
+        noteTags.value = notes[editingIndex].tags || '';
+      } else if (e.target.dataset.delete !== undefined) {
+        notes.splice(+e.target.dataset.delete, 1);
+        localStorage.setItem('vaultNotes', JSON.stringify(notes));
+        clearInputs();
+        renderNotes();
+      } else if (e.target.dataset.fav !== undefined) {
+        const idx = +e.target.dataset.fav;
+        notes[idx].favorite = !notes[idx].favorite;
+        localStorage.setItem('vaultNotes', JSON.stringify(notes));
+        renderNotes();
+      } else if (e.target.dataset.copy !== undefined) {
+        const idx = +e.target.dataset.copy;
+        navigator.clipboard.writeText(notes[idx].title + '\n' + notes[idx].content);
+        e.target.textContent = 'Kopyalandı!';
+        setTimeout(()=>{e.target.textContent='Kopyala';}, 1200);
+      }
+    };
+    searchInput.oninput = renderNotes;
+    toggleCrtBtn.onclick = function() {
+      crtOn = !crtOn;
+      crtOverlay.style.display = crtOn ? '' : 'none';
+      toggleCrtBtn.classList.toggle('active', crtOn);
+    };
+    window.addEventListener('DOMContentLoaded', renderNotes);
+
+    // Link paneli işlevselliği
+    const saveLinkBtn = document.getElementById('saveLinkBtn');
+    const clearLinkBtn = document.getElementById('clearLinkBtn');
+    const linkName = document.getElementById('linkName');
+    const linkUrl = document.getElementById('linkUrl');
+    const linkCategory = document.getElementById('linkCategory');
+    const linksList = document.getElementById('linksList');
+    let links = JSON.parse(localStorage.getItem('vaultLinks') || '[]');
+    let editingLink = null;
+    function renderLinks() {
+      const categories = {};
+      links.forEach((link, idx) => {
+        const cat = link.category || 'Kategorisiz';
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push({ ...link, idx });
+      });
+      linksList.innerHTML = '';
+      Object.keys(categories).forEach(cat => {
+        const group = document.createElement('div');
+        group.className = 'link-category-group';
+        group.innerHTML = `<div class='link-category-header' tabindex='0'>${cat} <span>[${categories[cat].length}]</span></div><div class='link-list'></div>`;
+        const list = group.querySelector('.link-list');
+        categories[cat].forEach(link => {
+          const item = document.createElement('div');
+          item.className = 'link-item';
+          item.innerHTML = `<a href='${link.url}' target='_blank' rel='noopener'>${link.name}</a>
+            <div class='link-actions'>
+              <button data-edit='${link.idx}'>Düzenle</button>
+              <button data-delete='${link.idx}'>Sil</button>
+            </div>`;
+          list.appendChild(item);
+        });
+        group.querySelector('.link-category-header').onclick = () => {
+          list.classList.toggle('hidden');
+        };
+        group.querySelector('.link-category-header').onkeydown = e => {
+          if (e.key === 'Enter' || e.key === ' ') list.classList.toggle('hidden');
+        };
+        linksList.appendChild(group);
+      });
+    }
+    function clearLinkInputs() {
+      linkName.value = '';
+      linkUrl.value = '';
+      linkCategory.value = '';
+      editingLink = null;
+    }
+    saveLinkBtn.onclick = function() {
+      const name = linkName.value.trim();
+      const url = linkUrl.value.trim();
+      const category = linkCategory.value.trim();
+      if (!name || !url) return;
+      if (editingLink !== null) {
+        links[editingLink] = { name, url, category };
+      } else {
+        links.unshift({ name, url, category });
+      }
+      localStorage.setItem('vaultLinks', JSON.stringify(links));
+      clearLinkInputs();
+      renderLinks();
+    };
+    clearLinkBtn.onclick = function() {
+      clearLinkInputs();
+    };
+    linksList.onclick = function(e) {
+      if (e.target.dataset.edit !== undefined) {
+        editingLink = +e.target.dataset.edit;
+        linkName.value = links[editingLink].name;
+        linkUrl.value = links[editingLink].url;
+        linkCategory.value = links[editingLink].category;
+      } else if (e.target.dataset.delete !== undefined) {
+        links.splice(+e.target.dataset.delete, 1);
+        localStorage.setItem('vaultLinks', JSON.stringify(links));
+        clearLinkInputs();
+        renderLinks();
+      }
+    };
+    window.addEventListener('DOMContentLoaded', renderLinks);
+  </script>
+</body>
+</html>
